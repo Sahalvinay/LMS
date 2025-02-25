@@ -8,6 +8,8 @@ import humanizeDuration from 'humanize-duration';
 import Footer from '../../components/student/Footer';
 import Youtube from 'react-youtube'
 import YouTube from 'react-youtube';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const CourseDetail = () => {
 
@@ -18,14 +20,60 @@ const CourseDetail = () => {
   const [playerData, setPlayerData] = useState(null)
 
 
-  const {allCourses,calculateRating,calculateCourseDuration,calculateChapterTime,calculateNoOfLectures,currency} = useContext(AppContext)
+  const {allCourses,calculateRating,calculateCourseDuration,calculateChapterTime,calculateNoOfLectures,currency,backendUrl, userData,getToken} = useContext(AppContext)
   const fetchCourseData = async ()=>{
-    const findCourse = allCourses.find(course => course._id === id)
-    setCourseData(findCourse);
+    
+    try {
+      const {data} = await axios.get(backendUrl + '/api/course/' + id)
+
+      if(data.success){
+        setCourseData({
+          ...data.courseData,
+          courseRatings: data.courseData.courseRatings || [], // Ensure an array
+          enrolledStudents: data.courseData.enrolledStudents || [],
+          courseContent: data.courseData.courseContent || []
+        })
+      }else{
+        toast.error(data.message)
+      }
+    } catch (error) {
+      toast.error(error.message)
+    }
   }
+
+  const enrollCourse = async ()=>{
+    try {
+      if(!userData){
+        return toast.warn('Login to Enroll')
+      }
+      if(isAlreadyEnrolled){
+        return toast.warn('Already Enrolled')
+      }
+      const token = await getToken();
+
+      const {data} = await axios.post(backendUrl + '/api/user/purchase', {courseId: courseData._id}, {headers: {Authorization: `Bearer ${token}`}})
+      if(data.success){
+        const {session_url} = data
+        window.location.replace(session_url)
+      }else{
+        toast.error(data.message)
+      }
+
+    } catch (error) {
+        toast.error(error.message)
+    }
+  }
+
   useEffect(()=>{
     fetchCourseData()
-  },[allCourses])
+  },[])
+
+  useEffect(()=>{
+    if(userData && courseData){
+      setIsAlreadyEnrolled(userData.enrolledCourses.includes(courseData._id))
+    }
+  },[userData , courseData])
+
 
   const toggleSection = (index) => {
     setOpenSections((prev) => ({
@@ -33,6 +81,8 @@ const CourseDetail = () => {
       [index]: !prev[index] || false, 
     }));
   };
+
+  console.log(courseData)
   
   return courseData ? (
     <>
@@ -49,22 +99,22 @@ const CourseDetail = () => {
           <div className='flex' >
             {[...Array(5)].map((_,i)=>(<img key={i} src={i < Math.floor(calculateRating(courseData)) ? assets.star : assets.star_blank} alt='' className='w-3.5 h-3.5' />))}
           </div>
-          <p className='text-blue-600' >({courseData.courseRatings.length} {courseData.courseRatings.length > 1 ? 'ratings' : 'rating'})</p>
-          <p>{courseData.enrolledStudents.length} {courseData.enrolledStudents.length > 1 ? 'students' : 'student' } </p>
+          <p className='text-blue-600' >({courseData?.courseRatings?.length} {courseData?.courseRatings?.length > 1 ? 'ratings' : 'rating'})</p>
+          <p>{courseData?.enrolledStudents?.length} {courseData?.enrolledStudents?.length > 1 ? 'students' : 'student' } </p>
         </div>
-        <p className='text-sm' >Course by <span className='text-blue-600 underline' >Vinay</span></p>
+        <p className='text-sm' >Course by <span className='text-blue-600 underline' >{courseData.educator.name}</span></p>
         <div className='pt-8 text-gray-800' >
           <h2 className='text-xl font-semibold' >Course Structure</h2>
           <div className='pt-5' >
-            {courseData.courseContent.map((chapter,index)=>(
+            {courseData?.courseContent?.map((chapter,index)=>(
               <div key={index} className='border border-gray-300 bg-white mb-2 rounded' >
                 <div className='flex items-center justify-between px-4 py-3 cursor-pointer select-none' onClick={()=> toggleSection(index)} >
                   <div className='flex items-center gap-2' >
                     <img className={`transform transition-transform ${openSections [index] ? 'rotate-180' : ' '}`} 
                     src={assets.down_arrow_icon} alt="arrow icon" />
-                    <p className='font-medium md:text-base text-sm' >{chapter.chapterTitle}</p>
+                    <p className='font-medium md:text-base text-sm' >{chapter?.chapterTitle}</p>
                   </div>
-                  <p className='text-sm md:text-default' >{chapter.chapterContent.length} lectures - {calculateChapterTime(chapter)}</p>
+                  <p className='text-sm md:text-default' >{chapter.chapterContent.length || 0} lectures - {calculateChapterTime(chapter)}</p>
                 </div>
 
                 <div className={`overflow-hidden transition-all duration-300 ${openSections[index] ? 'block' : 'hidden'}`}>
@@ -134,7 +184,7 @@ const CourseDetail = () => {
               </div>
 
             </div>
-            <button className='md:mt-6 mt-4 w-full py-3 rounded bg-blue-600 text-white font-medium cursor-pointer' >{isAlreadyEnrolled ? 'Already Enrolled' : 'Enroll Now'}  </button>
+            <button onClick={enrollCourse} className='md:mt-6 mt-4 w-full py-3 rounded bg-blue-600 text-white font-medium cursor-pointer' >{isAlreadyEnrolled ? 'Already Enrolled' : 'Enroll Now'}  </button>
 
             <div>
               <p className='md:text-xl text-lg font-medium text-gray-800' >What's in the course?</p>
