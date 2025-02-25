@@ -76,10 +76,11 @@ const Player = () => {
     }
   }
 
-  const handleRate = async()=>{
+  const handleRate = async(rating)=>{
+
     try {
       const token = await getToken()
-      const { data } = await axios.post(backendUrl + 'api/user/add-rating', { courseId, rating },{headers: {Authorization:`Bearer ${token}`}} )
+      const { data } = await axios.post(backendUrl + '/api/user/add-rating', { courseId, rating },{headers: {Authorization:`Bearer ${token}`}} )
 
       if(data.success){
         toast.success(data.message)

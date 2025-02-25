@@ -109,6 +109,7 @@ export const AppContextProvider = (props)=>{
 
     // fetch user enrolled courses:
     const fetchUserEnrolledCourses = async ()=>{
+      console.log("Enrolled Courses:", enrolledCourses);
 
       try {
         const token = await getToken();
