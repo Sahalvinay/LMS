@@ -82,7 +82,6 @@ const CourseDetail = () => {
     }));
   };
 
-  console.log(courseData)
   
   return courseData ? (
     <>

@@ -1,6 +1,5 @@
 import { createContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { dummyCourses } from '../assets/assets'
 import humanizeDuration from 'humanize-duration'
 import { useAuth, useUser } from "@clerk/clerk-react";
 import axios from 'axios'
@@ -106,6 +105,7 @@ export const AppContextProvider = (props)=>{
       });
       return totalLectures;
     }
+
 
     // fetch user enrolled courses:
     const fetchUserEnrolledCourses = async ()=>{

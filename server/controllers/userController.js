@@ -15,7 +15,7 @@ export const getUserData = async(req,res)=>{
             return res.json({ success: false,message: 'User Not Found' })
         }
 
-        res.json( {succes:true, user } )
+        res.json( {success:true, user } )
 
     } catch (error) {
         res.json({ success: false, message: error.message });
